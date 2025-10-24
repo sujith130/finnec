@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Link to Bootstrap CSS from CDN -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        body {
+            background-color: #37517e;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .navbar {
+            background-color: #1b2d4f;
+            padding: 15px;
+        }
+
+        .navbar-brand {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .navbar-brand:hover {
+            color: white;
+        }
+
+        .get-started-btn {
+            background-color: transparent;
+            border: 2px solid #00d2ff;
+            color: #00d2ff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+        }
+
+        .get-started-btn:hover {
+            background-color: #00d2ff;
+            color: white;
+        }
+
+        .container {
+            background-color: #96d8ee;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            margin: 50px auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .form-group label {
+            color: white;
+            font-size: 16px;
+            text-align: left;
+            display: block;
+        }
+
+        .form-control, .form-select {
+            background-color: #4a3c5e;
+            border: none;
+            color: white;
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background-color: #E4542A;
+            border: none;
+            padding: 10px;
+            font-size: 18px;
+            color: white;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .submit-btn:hover {
+            background-color: #cb3c14;
+        }
+
+        .form-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .form-subtitle {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <title>Loan Prediction Form</title>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="#">Financial Advisory Model for SME's</a>
+        <div class="ml-auto">
+            <a href="#" class="get-started-btn">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Form Container -->
+    <div class="container">
+        <div class="form-title">Predict your loan application and learn where and how to!!</div>
+        <div class="form-subtitle">Kindly fill the form below</div>
+
+        <!-- Form -->
+        <form class="well form-horizontal" action="/predict" method="post" id="loan_form">
+            <fieldset>
+                <!-- Number of Dependents -->
+                <div class="form-group">
+                    <label for="no_of_dependents">Number of Dependents:</label>
+                    <input type="number" id="no_of_dependents" name="no_of_dependents" class="form-control" placeholder="Enter number of dependents" required>
+                </div>
+
+                <!-- Education -->
+                <div class="form-group">
+                    <label for="education">Education:</label>
+                    <select id="education" name="education" class="form-select" required>
+                        <option value="Graduate">Graduate</option>
+                        <option value="Not Graduate">Not Graduate</option>
+                    </select>
+                </div>
+
+                <!-- Employment Status -->
+                <div class="form-group">
+                    <label for="self_employed">Employment Status:</label>
+                    <select id="self_employed" name="self_employed" class="form-select" required>
+                        <option value="Yes">Employed (Self)</option>
+                        <option value="No">Employed (Other)</option>
+                    </select>
+                </div>
+
+                <!-- Annual Income -->
+                <div class="form-group">
+                    <label for="income_annum">Annual Income (INR):</label>
+                    <input type="number" id="income_annum" name="income_annum" class="form-control" placeholder="Enter your annual income" required>
+                </div>
+
+                <!-- Loan Amount -->
+                <div class="form-group">
+                    <label for="loan_amount">Loan amount (INR):</label>
+                    <input type="number" id="loan_amount" name="loan_amount" class="form-control" placeholder="Enter loan amount" required>
+                </div>
+
+                <!-- Loan Term -->
+                <div class="form-group">
+                    <label for="loan_term">Loan Term (Years):</label>
+                    <input type="number" id="loan_term" name="loan_term" class="form-control" placeholder="Enter loan term in years" required>
+                </div>
+
+                <!-- CIBIL Score -->
+                <div class="form-group">
+                    <label for="cibil_score">CIBIL Score:</label>
+                    <input type="number" id="cibil_score" name="cibil_score" class="form-control" placeholder="Enter your CIBIL score" required>
+                </div>
+
+                <!-- Residential Assets Value -->
+                <div class="form-group">
+                    <label for="residential_assets_value">Residential Assets Value (INR):</label>
+                    <input type="number" id="residential_assets_value" name="residential_assets_value" class="form-control" placeholder="Enter residential assets value" required>
+                </div>
+
+                <!-- Commercial Assets Value -->
+                <div class="form-group">
+                    <label for="commercial_assets_value">Commercial Assets Value (INR):</label>
+                    <input type="number" id="commercial_assets_value" name="commercial_assets_value" class="form-control" placeholder="Enter commercial assets value" required>
+                </div>
+
+                <!-- Luxury Assets Value -->
+                <div class="form-group">
+                    <label for="luxury_assets_value">Luxury Assets Value (INR):</label>
+                    <input type="number" id="luxury_assets_value" name="luxury_assets_value" class="form-control" placeholder="Enter luxury assets value" required>
+                </div>
+
+                <!-- Bank Asset Value -->
+                <div class="form-group">
+                    <label for="bank_asset_value">Bank Asset Value (INR):</label>
+                    <input type="number" id="bank_asset_value" name="bank_asset_value" class="form-control" placeholder="Enter bank asset value" required>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn">Predict</button>
+            </fieldset>
+        </form>
+    </div>
+</body>
+
+</html>
