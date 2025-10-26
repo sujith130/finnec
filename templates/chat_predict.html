@@ -92,19 +92,29 @@
                              {%elif pred == 0%}
                             Congratulations, it looks like your application would be approved!
                              {%endif%}<br><hr>
-                            Here are places you can check to get loan in {{State}} and outside:<br><br>
-                            <strong>In {{State}}:</strong><br>
-                            {%for i in bot_predict_response%}
-                            
-                            -  <a href={{i['myCountry']['link']}} target="_blank">{{i['myState']['organizationName']}}</a><br>
-                            {%endfor%}
+                            Here are places you can check to get loan in {{country}} and outside:<br><br>
+                            <strong>In {{country}}:</strong><br>
+                            {%if bot_predict_response and bot_predict_response is iterable%}
+                                {%for i in bot_predict_response%}
+                                    {%if i.get('myCountry') and i['myCountry'].get('organizationName')%}
+                                        -  <a href="{{i['myCountry']['link']}}" target="_blank">{{i['myCountry']['organizationName']}}</a><br>
+                                    {%endif%}
+                                {%endfor%}
+                            {%else%}
+                                <em>Loading loan options for your country...</em><br>
+                            {%endif%}
                             
                             <br>
-                            <strong>Other States:</strong><br>
-                            {%for i in bot_predict_response%}
-                            
-                            -  <a href={{i['otherCountry']['link']}} target="_blank">{{i['otherState']['organizationName']}}</a>
-                            <br>{%endfor%}
+                            <strong>Other Countries:</strong><br>
+                            {%if bot_predict_response and bot_predict_response is iterable%}
+                                {%for i in bot_predict_response%}
+                                    {%if i.get('otherCountry') and i['otherCountry'].get('organizationName')%}
+                                        -  <a href="{{i['otherCountry']['link']}}" target="_blank">{{i['otherCountry']['organizationName']}}</a> ({{i['otherCountry'].get('Country', 'International')}})<br>
+                                    {%endif%}
+                                {%endfor%}
+                            {%else%}
+                                <em>Loading international loan options...</em><br>
+                            {%endif%}
                             <br>
                             
 

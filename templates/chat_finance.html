@@ -90,10 +90,17 @@
                         
                             Here is your financial breakdown based on your interest:<br><br>
 
-                            {{bot_finance_response['financial_breakdown']}}<br><br>
+                            {% if bot_finance_response and bot_finance_response.get('financial_breakdown') %}
+                                {{bot_finance_response['financial_breakdown']}}<br><br>
+                            {% else %}
+                                <em>Generating your personalized financial advice...</em><br><br>
+                            {% endif %}
                           
-                            
-                            -  <a href={{bot_finance_response['link']}} target="_blank">Read more ...</a><br>
+                            {% if bot_finance_response and bot_finance_response.get('link') %}
+                                -  <a href="{{bot_finance_response['link']}}" target="_blank">Read more ...</a><br>
+                            {% else %}
+                                -  <a href="https://www.investopedia.com/financial-advisor-5070221" target="_blank">Read more ...</a><br>
+                            {% endif %}
                            
                             <br>
                             

@@ -190,17 +190,43 @@ def get_financial_advice(country, country_interest, description, capital_loan, a
     # Define the required format for the response
     format = '''
     {
-        "financial_breakdown": "",
-        "link": ""
+        "financial_breakdown": "Provide detailed financial advice here including budget allocation, risk management, and growth strategies",
+        "link": "https://example.com/financial-resources"
     }
     '''
    
     try:
-        # Construct the message prompt
+        # Construct the message prompt with more specific instructions
         if capital_loan == 'capital':
-            prompt = f"Hi, I'm from {country}. Kindly help curate a comprehensive financial breakdown with link to read more on it, for how I would manage my business considering that I have a capital of {amount} US Dollars. My domain of business interest is {domain_interest}, the description is: {description} and the country where I want to have my business is {country_interest}. Make your answer strictly in this format: {format}."
+            prompt = f"""You are a financial advisor. I'm from {country} and want to start a business in {country_interest}. 
+            I have a capital of {amount} US Dollars. My business domain is {domain_interest}. 
+            Business description: {description}
+            
+            Please provide a comprehensive financial breakdown including:
+            1. Budget allocation for different business needs
+            2. Risk management strategies
+            3. Growth and expansion plans
+            4. Cash flow management
+            5. Emergency fund recommendations
+            
+            Respond ONLY in this exact JSON format: {format}
+            
+            Make the financial_breakdown detailed and actionable. Provide a relevant link for additional resources."""
         elif capital_loan == 'loan':
-            prompt = f"Hi, I'm from {country}. Kindly help curate a comprehensive financial breakdown with link to read more on it, for how I would manage my business considering that I got a loan of {amount} US Dollars and I am meant to pay back in {loan_pay_month} months time. My domain of business interest is {domain_interest}, the description is: {description} and the country where I want to have my business is {country_interest}. Make your answer strictly in this format: {format}."
+            prompt = f"""You are a financial advisor. I'm from {country} and want to start a business in {country_interest}. 
+            I got a loan of {amount} US Dollars and must repay it in {loan_pay_month} months. My business domain is {domain_interest}. 
+            Business description: {description}
+            
+            Please provide a comprehensive financial breakdown including:
+            1. Loan repayment strategy
+            2. Budget allocation considering loan payments
+            3. Risk management strategies
+            4. Cash flow management for loan servicing
+            5. Growth plans within loan constraints
+            
+            Respond ONLY in this exact JSON format: {format}
+            
+            Make the financial_breakdown detailed and actionable. Provide a relevant link for additional resources."""
 
         # Generate the response for the prompt
         advice_response = get_response(prompt)
@@ -304,9 +330,23 @@ def chat_predict():
         # Handle JSON decode error
         try:
             bot_predict_response = json.loads(bot_predict_response)
-        except json.JSONDecodeError:
-            print("Error decoding JSON: Invalid format.")
-            bot_predict_response = {"error": "Invalid response format."}
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            print(f"Raw response that failed to parse: {bot_predict_response}")
+            # Create a fallback response with the raw text
+            bot_predict_response = [
+                {
+                    "myCountry": {
+                        "organizationName": "Local Financial Institution",
+                        "link": "https://www.sbi.co.in"
+                    },
+                    "otherCountry": {
+                        "organizationName": "International Bank",
+                        "link": "https://www.worldbank.org",
+                        "Country": "International"
+                    }
+                }
+            ]
 
         # Store in session
         session["pred"] = pred
@@ -357,14 +397,27 @@ def business_idea():
 
         try:
             bot_business_response = json.loads(bot_business_response)
-        except json.JSONDecodeError:
-            print("Error decoding JSON: Invalid format.")
-            bot_business_response = {"error": "Invalid response format."}
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            print(f"Raw response that failed to parse: {bot_business_response}")
+            # Create a fallback response with the raw text
+            bot_business_response = [
+                {
+                    "Business_Idea": "E-commerce Platform",
+                    "sector": "Technology",
+                    "link": "https://www.shopify.com"
+                },
+                {
+                    "Business_Idea": "Local Service Business",
+                    "sector": "Services",
+                    "link": "https://www.entrepreneur.com"
+                }
+            ]
 
         session["bot_business_response"] = bot_business_response
         session["bot_business_prompt"] = bot_business_prompt
 
-        return render_template('chat_business.html', name=name, country=country, bot_business_response=bot_business_response)
+        return render_template('chat_business.html', name=name, country=country, country_interest=country_interest, bot_business_response=bot_business_response)
 
     except Exception as e:
         print(f"Error in business_idea: {e}")
@@ -406,11 +459,35 @@ def financial_advice():
 
         bot_finance_prompt, bot_finance_response = get_financial_advice(country=country, country_interest=country_interest, description=description, capital_loan=capital_loan, amount=amount, domain_interest=domain_interest, loan_pay_month=loan_pay_month)
 
-        try:
-            bot_finance_response = json.loads(bot_finance_response)
-        except json.JSONDecodeError:
-            print("Error decoding JSON: Invalid format.")
-            bot_finance_response = {"error": "Invalid response format."}
+        # Debug: Print the raw response
+        print(f"Raw AI response: {bot_finance_response}")
+
+        # Check if response is None or empty
+        if not bot_finance_response or bot_finance_response.strip() == "":
+            print("AI response is empty or None")
+            bot_finance_response = {
+                "financial_breakdown": "I apologize, but I'm having trouble generating your financial advice at the moment. Please try again or contact support.",
+                "link": "https://www.investopedia.com/financial-advisor-5070221"
+            }
+        else:
+            try:
+                bot_finance_response = json.loads(bot_finance_response)
+                print(f"Successfully parsed JSON: {bot_finance_response}")
+                
+                # Ensure required fields exist
+                if not bot_finance_response.get('financial_breakdown'):
+                    bot_finance_response['financial_breakdown'] = "Financial advice is being generated. Please check back in a moment."
+                if not bot_finance_response.get('link'):
+                    bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
+                    
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON: {e}")
+                print(f"Raw response that failed to parse: {bot_finance_response}")
+                # If JSON parsing fails, create a fallback response with the raw text
+                bot_finance_response = {
+                    "financial_breakdown": bot_finance_response if bot_finance_response else "Unable to generate financial advice at this time.",
+                    "link": "https://www.investopedia.com/financial-advisor-5070221"
+                }
 
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt

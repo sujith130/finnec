@@ -13,7 +13,6 @@
 
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Jost:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
-  <link href="C:\Users\devan\Desktop\ai-finance-master\static\assets\vendor\aos\aos.css" rel="stylesheet">
   <link href="{{url_for('static', filename='assets/vendor/aos/aos.css')}}" rel="stylesheet">
   <link href="{{url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css')}}" rel="stylesheet">
   <link href="{{url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css')}}" rel="stylesheet">
@@ -90,13 +89,21 @@
                             
                            
                             
-                            Here are nice business ideas based on your interest and suitable in {{State}}:<br><br>
+                            Here are nice business ideas based on your interest and suitable in {{country_interest}}:<br><br>
                             
-                            {%for i in bot_business_response%}
-                            
-                            -  <a href={{i['link']}} target="_blank">{{i['Business_Idea']}}</a>
-                            (Sector: {{i['sector']}}) <br>
-                            {%endfor%}
+                            {%if bot_business_response and bot_business_response is iterable%}
+                                {%for i in bot_business_response%}
+                                    {%if i.get('Business_Idea') or i.get('Business Idea')%}
+                                        -  <a href="{{i.get('link', '#')}}" target="_blank">{{i.get('Business_Idea', i.get('Business Idea', 'Business Idea'))}}</a>
+                                        {%if i.get('sector')%}
+                                            (Sector: {{i['sector']}})
+                                        {%endif%}
+                                        <br>
+                                    {%endif%}
+                                {%endfor%}
+                            {%else%}
+                                <em>Generating personalized business ideas for you...</em><br>
+                            {%endif%}
                             
                             <br>
                             
