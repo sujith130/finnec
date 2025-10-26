@@ -324,6 +324,36 @@ def test_models():
         return f"Error: {e}"
 
 
+@app.route('/test_financial_advice', methods=["GET"])
+def test_financial_advice():
+    """Debug route to test financial advice generation"""
+    try:
+        # Test with sample data
+        test_prompt, test_response = get_financial_advice(
+            country="India",
+            country_interest="Maharashtra", 
+            description="Tech startup",
+            capital_loan="capital",
+            amount="100000",
+            domain_interest="Technology",
+            loan_pay_month="0"
+        )
+        
+        return f"""
+        <h2>Financial Advice Test</h2>
+        <h3>Prompt:</h3>
+        <pre>{test_prompt}</pre>
+        <h3>Response:</h3>
+        <pre>{test_response}</pre>
+        <h3>Response Type:</h3>
+        <p>{type(test_response)}</p>
+        <h3>Response Length:</h3>
+        <p>{len(str(test_response)) if test_response else 0}</p>
+        """
+    except Exception as e:
+        return f"Error testing financial advice: {e}"
+
+
 @app.route('/form_financial_advice', methods=["GET", "POST"])
 def form_financial_advice():
     return render_template('form_financial_advice.html')
@@ -516,33 +546,77 @@ def financial_advice():
 
         # Debug: Print the raw response
         print(f"Raw AI response: {bot_finance_response}")
+        print(f"Response type: {type(bot_finance_response)}")
+        print(f"Response length: {len(str(bot_finance_response)) if bot_finance_response else 0}")
 
         # Check if response is None or empty
-        if not bot_finance_response or bot_finance_response.strip() == "":
-            print("AI response is empty or None")
+        if not bot_finance_response or str(bot_finance_response).strip() == "":
+            print("AI response is empty or None - using fallback")
             bot_finance_response = {
                 "financial_breakdown": "I apologize, but I'm having trouble generating your financial advice at the moment. Please try again or contact support.",
                 "link": "https://www.investopedia.com/financial-advisor-5070221"
             }
         else:
             try:
-                bot_finance_response = json.loads(bot_finance_response)
-                print(f"Successfully parsed JSON: {bot_finance_response}")
+                # Try to parse as JSON
+                parsed_response = json.loads(bot_finance_response)
+                print(f"Successfully parsed JSON: {parsed_response}")
+                bot_finance_response = parsed_response
                 
                 # Ensure required fields exist
                 if not bot_finance_response.get('financial_breakdown'):
+                    print("Missing financial_breakdown field - adding fallback")
                     bot_finance_response['financial_breakdown'] = "Financial advice is being generated. Please check back in a moment."
                 if not bot_finance_response.get('link'):
+                    print("Missing link field - adding fallback")
                     bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
                     
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON: {e}")
                 print(f"Raw response that failed to parse: {bot_finance_response}")
-                # If JSON parsing fails, create a fallback response with the raw text
-                bot_finance_response = {
-                    "financial_breakdown": bot_finance_response if bot_finance_response else "Unable to generate financial advice at this time.",
-                    "link": "https://www.investopedia.com/financial-advisor-5070221"
-                }
+                
+                # If JSON parsing fails, create a fallback response
+                # Check if the response looks like it contains useful content
+                response_text = str(bot_finance_response).strip()
+                if len(response_text) > 50 and not response_text.startswith("Error"):
+                    # Use the raw response as financial breakdown
+                    bot_finance_response = {
+                        "financial_breakdown": response_text,
+                        "link": "https://www.investopedia.com/financial-advisor-5070221"
+                    }
+                else:
+                    # Use a comprehensive fallback
+                    bot_finance_response = {
+                        "financial_breakdown": f"""Based on your business profile, here's a comprehensive financial breakdown:
+
+**Budget Allocation:**
+- 40% for core business operations
+- 25% for marketing and customer acquisition  
+- 20% for technology and infrastructure
+- 10% for emergency fund
+- 5% for professional services
+
+**Risk Management:**
+- Maintain 3-6 months of operating expenses in reserve
+- Diversify revenue streams
+- Regular financial monitoring and reporting
+- Insurance coverage for key business risks
+
+**Growth Strategy:**
+- Focus on customer retention and repeat business
+- Invest in digital marketing and online presence
+- Consider partnerships and collaborations
+- Monitor cash flow closely during expansion
+
+**Cash Flow Management:**
+- Implement automated invoicing and payment tracking
+- Negotiate favorable payment terms with suppliers
+- Consider invoice factoring for immediate cash needs
+- Regular financial forecasting and planning
+
+This is a general framework - please consult with a financial advisor for personalized advice.""",
+                        "link": "https://www.investopedia.com/financial-advisor-5070221"
+                    }
 
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt

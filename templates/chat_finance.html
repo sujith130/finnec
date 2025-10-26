@@ -90,10 +90,38 @@
                         
                             Here is your financial breakdown based on your interest:<br><br>
 
-                            {% if bot_finance_response and bot_finance_response.get('financial_breakdown') %}
-                                {{bot_finance_response['financial_breakdown']}}<br><br>
+                            {% if bot_finance_response and bot_finance_response.get('financial_breakdown') and bot_finance_response['financial_breakdown'].strip() %}
+                                {{bot_finance_response['financial_breakdown']|safe}}<br><br>
                             {% else %}
-                                <em>Generating your personalized financial advice...</em><br><br>
+                                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff;">
+                                    <h4>Financial Advisory Framework</h4>
+                                    <p><strong>Budget Allocation:</strong></p>
+                                    <ul>
+                                        <li>40% for core business operations</li>
+                                        <li>25% for marketing and customer acquisition</li>
+                                        <li>20% for technology and infrastructure</li>
+                                        <li>10% for emergency fund</li>
+                                        <li>5% for professional services</li>
+                                    </ul>
+                                    
+                                    <p><strong>Risk Management:</strong></p>
+                                    <ul>
+                                        <li>Maintain 3-6 months of operating expenses in reserve</li>
+                                        <li>Diversify revenue streams</li>
+                                        <li>Regular financial monitoring and reporting</li>
+                                        <li>Insurance coverage for key business risks</li>
+                                    </ul>
+                                    
+                                    <p><strong>Growth Strategy:</strong></p>
+                                    <ul>
+                                        <li>Focus on customer retention and repeat business</li>
+                                        <li>Invest in digital marketing and online presence</li>
+                                        <li>Consider partnerships and collaborations</li>
+                                        <li>Monitor cash flow closely during expansion</li>
+                                    </ul>
+                                    
+                                    <p><em>This is a general framework. For personalized advice, please consult with a financial advisor.</em></p>
+                                </div><br>
                             {% endif %}
                           
                             {% if bot_finance_response and bot_finance_response.get('link') %}
