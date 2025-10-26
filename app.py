@@ -36,6 +36,26 @@ columns = ['no_of_dependents', 'education', 'self_employed', 'income_annum',
 
 
 
+def list_available_models():
+    """List all available Gemini models for debugging"""
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is not set")
+    
+    genai.configure(api_key=api_key)
+    
+    try:
+        models = genai.list_models()
+        print("Available models:")
+        for model in models:
+            if 'generateContent' in model.supported_generation_methods:
+                print(f"- {model.name}")
+        return models
+    except Exception as e:
+        print(f"Error listing models: {e}")
+        return []
+
+
 def get_response(prompt):
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
@@ -51,19 +71,38 @@ def get_response(prompt):
       "response_mime_type": "text/plain",
     }
 
-    model = genai.GenerativeModel(
-      model_name="gemini-1.5-flash",
-      generation_config=generation_config,
-    )
+    # List of model names to try in order of preference
+    model_names = [
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro-latest", 
+        "gemini-1.5-pro",
+        "gemini-pro",
+        "gemini-pro-vision"
+    ]
+    
+    last_error = None
+    
+    for model_name in model_names:
+        try:
+            print(f"Trying model: {model_name}")
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                generation_config=generation_config,
+            )
 
-    chat_session = model.start_chat(
-      history=[
-      ]
-    )
-
-    response = chat_session.send_message(prompt)
-
-    return response.text
+            chat_session = model.start_chat(history=[])
+            response = chat_session.send_message(prompt)
+            print(f"Successfully used model: {model_name}")
+            return response.text
+            
+        except Exception as e:
+            print(f"Model {model_name} failed: {e}")
+            last_error = e
+            continue
+    
+    # If all models fail, raise the last error
+    raise Exception(f"All Gemini models failed. Last error: {last_error}")
 
 
 
@@ -235,7 +274,13 @@ def get_financial_advice(country, country_interest, description, capital_loan, a
 
     except Exception as e:
         print(f"Error occurred while getting financial advice: {e}")
-        return None, "Error occurred while getting financial advice."
+        # Return a more specific error message based on the error type
+        if "404" in str(e) and "models" in str(e):
+            return None, "Gemini model not available. Please check your API key and model access."
+        elif "API key" in str(e):
+            return None, "Invalid or missing API key. Please check your GEMINI_API_KEY."
+        else:
+            return None, f"Error occurred while getting financial advice: {str(e)}"
 
 
 
@@ -267,6 +312,16 @@ def sign_in():
 @app.route('/services', methods=["GET", "POST"])
 def services():
     return render_template('services.html')
+
+
+@app.route('/test_models', methods=["GET"])
+def test_models():
+    """Debug route to test available Gemini models"""
+    try:
+        models = list_available_models()
+        return f"Available models: {[model.name for model in models]}"
+    except Exception as e:
+        return f"Error: {e}"
 
 
 @app.route('/form_financial_advice', methods=["GET", "POST"])
