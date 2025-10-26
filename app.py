@@ -274,13 +274,20 @@ def get_financial_advice(country, country_interest, description, capital_loan, a
 
     except Exception as e:
         print(f"Error occurred while getting financial advice: {e}")
+        print(f"Error type: {type(e)}")
+        
         # Return a more specific error message based on the error type
-        if "404" in str(e) and "models" in str(e):
+        error_str = str(e)
+        if "404" in error_str and "models" in error_str:
             return None, "Gemini model not available. Please check your API key and model access."
-        elif "API key" in str(e):
+        elif "API key" in error_str or "authentication" in error_str.lower():
             return None, "Invalid or missing API key. Please check your GEMINI_API_KEY."
+        elif "quota" in error_str.lower() or "limit" in error_str.lower():
+            return None, "API quota exceeded. Please try again later."
+        elif "network" in error_str.lower() or "connection" in error_str.lower():
+            return None, "Network connection issue. Please check your internet connection."
         else:
-            return None, f"Error occurred while getting financial advice: {str(e)}"
+            return None, f"Error occurred while getting financial advice: {error_str}"
 
 
 
@@ -352,6 +359,36 @@ def test_financial_advice():
         """
     except Exception as e:
         return f"Error testing financial advice: {e}"
+
+
+@app.route('/test_api_key', methods=["GET"])
+def test_api_key():
+    """Debug route to test API key and basic connectivity"""
+    try:
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            return "❌ GEMINI_API_KEY environment variable is not set"
+        
+        if len(api_key) < 10:
+            return f"❌ API key seems too short: {api_key[:5]}..."
+        
+        # Test basic API connectivity
+        genai.configure(api_key=api_key)
+        
+        # Try to list models
+        models = genai.list_models()
+        model_count = len(list(models))
+        
+        return f"""
+        <h2>API Key Test Results</h2>
+        <p>✅ API Key is set (length: {len(api_key)})</p>
+        <p>✅ API Key starts with: {api_key[:10]}...</p>
+        <p>✅ Successfully connected to Gemini API</p>
+        <p>✅ Found {model_count} available models</p>
+        <p><strong>Status: API Key is working correctly!</strong></p>
+        """
+    except Exception as e:
+        return f"❌ API Key test failed: {e}"
 
 
 @app.route('/form_financial_advice', methods=["GET", "POST"])
@@ -543,6 +580,66 @@ def financial_advice():
         name = session.get("name", None)
 
         bot_finance_prompt, bot_finance_response = get_financial_advice(country=country, country_interest=country_interest, description=description, capital_loan=capital_loan, amount=amount, domain_interest=domain_interest, loan_pay_month=loan_pay_month)
+        
+        # Check if the AI call completely failed
+        if bot_finance_response is None or bot_finance_response.startswith("Error occurred"):
+            print("AI call failed completely, using comprehensive fallback")
+            bot_finance_response = {
+                "financial_breakdown": f"""Based on your business profile for {domain_interest} in {country_interest}, here's a comprehensive financial breakdown:
+
+**Business Overview:**
+- Domain: {domain_interest}
+- Location: {country_interest}
+- Capital/Loan: {capital_loan.title()} of ₹{amount:,}
+- Description: {description}
+
+**Financial Planning Framework:**
+
+**1. Budget Allocation (₹{amount:,}):**
+- 40% (₹{int(amount) * 0.4:,}) - Core business operations and infrastructure
+- 25% (₹{int(amount) * 0.25:,}) - Marketing and customer acquisition
+- 20% (₹{int(amount) * 0.2:,}) - Technology and digital tools
+- 10% (₹{int(amount) * 0.1:,}) - Emergency fund and reserves
+- 5% (₹{int(amount) * 0.05:,}) - Professional services and legal
+
+**2. Risk Management:**
+- Maintain 3-6 months operating expenses in reserve
+- Diversify revenue streams within {domain_interest} sector
+- Regular financial monitoring and monthly reporting
+- Insurance coverage for business assets and liability
+- Backup plans for key business processes
+
+**3. Growth Strategy:**
+- Focus on customer retention and repeat business
+- Invest in digital marketing and online presence
+- Consider partnerships within {domain_interest} ecosystem
+- Monitor cash flow closely during expansion phases
+- Build strong relationships with suppliers and vendors
+
+**4. Cash Flow Management:**
+- Implement automated invoicing and payment tracking
+- Negotiate favorable payment terms with suppliers
+- Consider invoice factoring for immediate cash needs
+- Regular financial forecasting and scenario planning
+- Monitor key performance indicators (KPIs)
+
+**5. Sector-Specific Considerations for {domain_interest}:**
+- Research industry-specific financial requirements
+- Understand regulatory compliance costs
+- Plan for seasonal variations in revenue
+- Consider technology investments for efficiency
+- Build relationships with industry experts
+
+**Next Steps:**
+1. Create detailed monthly budget tracking
+2. Set up business banking and accounting systems
+3. Research {domain_interest} industry benchmarks
+4. Consult with a financial advisor for personalized guidance
+5. Regular review and adjustment of financial plans
+
+*This is a general framework. For personalized advice, please consult with a qualified financial advisor.*""",
+                "link": "https://www.investopedia.com/financial-advisor-5070221"
+            }
 
         # Debug: Print the raw response
         print(f"Raw AI response: {bot_finance_response}")
