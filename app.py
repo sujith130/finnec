@@ -73,6 +73,7 @@ def get_response(prompt):
 
     # List of model names to try in order of preference
     model_names = [
+        "gemini-2.5-flash",
         "gemini-1.5-flash-latest",
         "gemini-1.5-flash",
         "gemini-1.5-pro-latest", 
