@@ -64,7 +64,7 @@ Once your code is on GitHub, you can deploy to Render:
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `gunicorn app:app`
 6. Set environment variables:
-   - `GEMINI_API_KEY`: `AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58`
+   - `GEMINI_API_KEY`: `AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic`
    - `SECRET_KEY`: `finnec-secret-key-2024`
    - `FLASK_ENV`: `production`
 7. Deploy! 🚀

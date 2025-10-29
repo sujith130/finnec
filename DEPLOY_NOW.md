@@ -13,7 +13,7 @@ Your Google Gemini API key has been configured and tested successfully.
 3. Connect your repository
 4. Create new Web Service
 5. Set these environment variables:
-   - GEMINI_API_KEY: AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58
+   - GEMINI_API_KEY: AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic
    - SECRET_KEY: finnec-secret-key-2024
 6. Deploy!
 
@@ -26,7 +26,7 @@ Your Google Gemini API key has been configured and tested successfully.
 ### Option 3: Heroku
 1. Install Heroku CLI
 2. Run: heroku create your-app-name
-3. Run: heroku config:set GEMINI_API_KEY=AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58
+3. Run: heroku config:set GEMINI_API_KEY=AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic
 4. Run: heroku config:set SECRET_KEY=finnec-secret-key-2024
 5. Run: git push heroku main
 

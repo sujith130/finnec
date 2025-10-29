@@ -67,7 +67,7 @@ def show_render_instructions():
     print("4. SET ENVIRONMENT VARIABLES:")
     print("   - Click 'Advanced' -> 'Environment Variables'")
     print("   - Add these variables:")
-    print("     GEMINI_API_KEY = AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58")
+    print("     GEMINI_API_KEY = AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic")
     print("     SECRET_KEY = finnec-secret-key-2024")
     print("     FLASK_ENV = production")
     print()

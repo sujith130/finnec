@@ -33,7 +33,7 @@ Click **"Advanced"** → **"Environment Variables"** and add:
 
 | Key | Value |
 |-----|-------|
-| `GEMINI_API_KEY` | `AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58` |
+| `GEMINI_API_KEY` | `AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic` |
 | `SECRET_KEY` | `finnec-secret-key-2024` |
 | `FLASK_ENV` | `production` |
 

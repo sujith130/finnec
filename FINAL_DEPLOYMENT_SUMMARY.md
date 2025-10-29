@@ -13,7 +13,7 @@
 3. **Connect** your repository
 4. **Create** new Web Service
 5. **Set Environment Variables:**
-   - `GEMINI_API_KEY`: `AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58`
+   - `GEMINI_API_KEY`: `AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic`
    - `SECRET_KEY`: `finnec-secret-key-2024`
 6. **Deploy!** 🚀
 
@@ -26,7 +26,7 @@
 ### Option 3: Heroku
 1. **Install** Heroku CLI
 2. **Run:** `heroku create your-app-name`
-3. **Run:** `heroku config:set GEMINI_API_KEY=AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58`
+3. **Run:** `heroku config:set GEMINI_API_KEY=AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic`
 4. **Run:** `heroku config:set SECRET_KEY=finnec-secret-key-2024`
 5. **Run:** `git push heroku main`
 
@@ -36,7 +36,7 @@ To test your app locally:
 
 ```bash
 # Set environment variables
-$env:GEMINI_API_KEY="AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58"
+$env:GEMINI_API_KEY="AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic"
 $env:SECRET_KEY="finnec-secret-key-2024"
 
 # Run the app

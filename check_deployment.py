@@ -16,7 +16,7 @@ def check_local_app():
     
     try:
         # Set environment variables
-        os.environ["GEMINI_API_KEY"] = "AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58"
+        os.environ["GEMINI_API_KEY"] = "AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic"
         os.environ["SECRET_KEY"] = "finnec-secret-key-2024"
         
         # Test imports
@@ -81,7 +81,7 @@ def show_deployment_instructions():
     print("   - Build Command: pip install -r requirements.txt")
     print("   - Start Command: gunicorn app:app")
     print("6. Set environment variables:")
-    print("   - GEMINI_API_KEY: AIzaSyDniD-YRzG8HXVBDeDdAiiJRF1GRyKqn58")
+    print("   - GEMINI_API_KEY: AIzaSyAJdzZKh83T1CjrgyL7fJQd9ro5rbwckic")
     print("   - SECRET_KEY: finnec-secret-key-2024")
     print("   - FLASK_ENV: production")
     print("7. Deploy!")
