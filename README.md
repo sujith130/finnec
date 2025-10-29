@@ -1,5 +1,9 @@
 # Finnec – AI SME Advisor
 
+## Live Demo
+
+Visit the deployed app on Render: https://finnec-app.onrender.com
+
 Finnec is an AI-driven financial advisory application that provides personalized guidance for small and medium-sized enterprises (SMEs). It combines a predictive ML model with Google’s Gemini models for conversational insights.
 
 ## Features
