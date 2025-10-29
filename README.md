@@ -111,7 +111,5 @@ Ensure you configure environment variables on your platform:
 - Do not commit real API keys to version control. Prefer environment variables and `.env` files excluded by `.gitignore`.
 - If a key was exposed, rotate it in Google AI Studio and update `config.env` or platform env vars.
 
-## License
 
-This project is provided as-is for educational and demonstration purposes.
 
