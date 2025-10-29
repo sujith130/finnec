@@ -1,63 +1,113 @@
+# Finnec – AI SME Advisor
 
-
----
-
-# AI SME Advisor
-
-AI SME Advisor is an AI-driven financial advisory application designed to provide personalized financial guidance for small and medium-sized enterprises (SMEs). This Flask-based application utilizes OpenAI’s Turbo for tailored recommendations and predictive analytics through machine learning, helping SMEs make informed business decisions.
+Finnec is an AI-driven financial advisory application that provides personalized guidance for small and medium-sized enterprises (SMEs). It combines a predictive ML model with Google’s Gemini models for conversational insights.
 
 ## Features
 
-- **Personalized Financial Recommendations**: Provides tailored advice focused on loan queries, financial strategy, and business growth.
-- **Predictive Analytics**: Uses machine learning models to analyze data, anticipate financial trends, and offer insights.
-- **User-Friendly Interface**: Built with an accessible and intuitive layout for ease of use.
-- **Scalability**: Deployed on Render for efficient scaling and accessibility.
+- **Personalized Business & Financial Advice**: Conversational guidance powered by Gemini.
+- **Predictive Analytics**: Random Forest model for outcome prediction.
+- **Modern UI**: Responsive frontend served via Flask with static assets.
+- **Deploy-ready**: Render/Heroku friendly with Procfile and guides.
 
 ## Technology Stack
 
-- **Backend**: Flask
-- **AI/ML**: OpenAI’s Turbo, machine learning models for predictive insights
-- **Deployment**: Render
+- **Backend**: Flask (Python)
+- **AI**: Google Generative AI (`google-generativeai`)
+- **Primary Model**: `gemini-2.5-flash` (with fallbacks)
+- **ML**: scikit-learn RandomForest (loaded from `random_forest_model.pkl`)
 
-## Getting Started
+## Requirements
 
-### Prerequisites
+- Python 3.10+ (3.13 tested)
+- Pip
 
-- Python 3.8 or higher
-- Flask
-- OpenAI API Key
+Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-### Installation
+## Configuration
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/AI-Driven-Financial-Advisory-App-for-SME-s.git
-   cd ai-sme-advisor
-   ```
+Set required environment variables. You can use `config.env` (loaded automatically by the app) or export variables in your shell.
 
-2. Install all required libraries and packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Required:
+- `GEMINI_API_KEY` – your Google AI Studio API key
+- `SECRET_KEY` – Flask secret key
 
-### Running the Application
+Options:
+- `FLASK_ENV` – `development` or `production` (defaults to development)
 
-1. **Navigate to the `prefinal1` folder**:
-   - Open Command Prompt in the `prefinal1` directory.
-   - Run the Python file needed for initial setup:
-     ```bash
-     python app.py
-     ```
-   
-2. **Return to the main `ai-finance` folder**:
-   - Go back to the `ai-finance` directory.
-   - Run the main application file (`app.py`):
-     ```bash
-     python app.py
-     ```
+Example (PowerShell on Windows):
+```powershell
+$env:GEMINI_API_KEY="<your-gemini-api-key>"
+$env:SECRET_KEY="finnec-secret-key-2024"
+```
 
-3. **Access the Application**:
-   - Open a web browser and go to `http://localhost:5000` to access the app.
+Or edit `config.env`:
+```env
+GEMINI_API_KEY=<your-gemini-api-key>
+SECRET_KEY=finnec-secret-key-2024
+```
 
+## Running Locally
 
+From the project directory that contains `app.py` (this folder):
+
+Option A – with helper script (recommended):
+```bash
+python run_app.py
+```
+
+Option B – run Flask app directly:
+```bash
+python app.py
+```
+
+Then open: `http://127.0.0.1:5000`
+
+If you see “connection refused”, ensure you’re in the folder that contains `app.py` (e.g. `.../finnec-main/finnec-main`) and that your `GEMINI_API_KEY` is set.
+
+## Gemini Models
+
+The app tries models in this order:
+```text
+gemini-2.5-flash
+gemini-1.5-flash-latest
+gemini-1.5-flash
+gemini-1.5-pro-latest
+gemini-1.5-pro
+gemini-pro
+gemini-pro-vision
+```
+
+You can view available models via the debug route:
+```text
+GET /test_models
+```
+
+## Useful Debug Routes
+
+- `GET /test_api_key` – verifies `GEMINI_API_KEY` presence and length
+- `GET /test_models` – lists available Gemini models
+
+## Deployment
+
+This repo includes step-by-step deploy docs for Render/Heroku:
+- `FINAL_RENDER_DEPLOYMENT.md`
+- `RENDER_DEPLOYMENT_GUIDE.md`
+- `FINAL_DEPLOYMENT_SUMMARY.md`
+- `DEPLOY_NOW.md`
+
+Ensure you configure environment variables on your platform:
+- `GEMINI_API_KEY`
+- `SECRET_KEY`
+
+## Security Notes
+
+- Do not commit real API keys to version control. Prefer environment variables and `.env` files excluded by `.gitignore`.
+- If a key was exposed, rotate it in Google AI Studio and update `config.env` or platform env vars.
+
+## License
+
+This project is provided as-is for educational and demonstration purposes.
 
