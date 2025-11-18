@@ -113,5 +113,5 @@ Ensure you configure environment variables on your platform:
 
 ## License
 
-This project is provided as-is for educational and demonstration purposes.
+
 
