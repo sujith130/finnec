@@ -641,12 +641,32 @@ def _safe_amount_num(amount_str, default=0):
         return default
 
 
+def _markdown_to_html(text):
+    """Simple markdown to HTML for chat: **bold** and newlines."""
+    if not text or not isinstance(text, str):
+        return ""
+    import re
+    # **bold** -> <strong>bold</strong>
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    # newlines -> <br>
+    text = text.replace('\n', '<br>\n')
+    return text.strip()
+
+
 def _financial_breakdown_to_markdown(value):
-    """Convert financial_breakdown to a string. Handles nested JSON (dict) from AI."""
+    """Convert financial_breakdown to a string. Handles nested JSON (dict) or JSON string from AI."""
     if value is None:
         return ""
     if isinstance(value, str):
-        return value.strip()
+        s = value.strip()
+        # If it looks like JSON, parse and convert
+        if s.startswith('{') and s.endswith('}'):
+            try:
+                value = json.loads(s)
+            except json.JSONDecodeError:
+                return s
+        else:
+            return s
     if not isinstance(value, dict):
         return str(value)
     parts = []
@@ -880,11 +900,14 @@ This is a general framework - please consult with a financial advisor for person
                         "link": "https://www.investopedia.com/financial-advisor-5070221"
                     }
 
-        # Ensure financial_breakdown is always a string (AI sometimes returns nested JSON)
-        if isinstance(bot_finance_response.get("financial_breakdown"), dict):
-            bot_finance_response["financial_breakdown"] = _financial_breakdown_to_markdown(
-                bot_finance_response["financial_breakdown"]
-            )
+        # Convert financial_breakdown to readable chat output (handles nested JSON or JSON string)
+        bd = bot_finance_response.get("financial_breakdown")
+        if bd is not None:
+            md = _financial_breakdown_to_markdown(bd)
+            if md:
+                bot_finance_response["financial_breakdown"] = _markdown_to_html(md)
+            else:
+                bot_finance_response["financial_breakdown"] = md
 
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt
