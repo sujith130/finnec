@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, session, jsonify, redirect, url_for
+import re
 import numpy as np
 import pandas as pd
 import requests
@@ -1008,48 +1009,23 @@ def financial_advice():
             if not bot_finance_response.get('link'):
                 bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
         else:
-            try:
-                # Try to parse as JSON (AI returns a string)
-                parsed_response = json.loads(bot_finance_response)
-                print(f"Successfully parsed JSON: {parsed_response}")
-                bot_finance_response = parsed_response
-                
-                # If AI returned breakdown at top level (no "financial_breakdown" key), wrap it
-                if not bot_finance_response.get('financial_breakdown') and isinstance(bot_finance_response, dict):
-                    if any(k in bot_finance_response for k in ("introduction", "budget_allocation", "risk_management")):
-                        link = bot_finance_response.pop("link", None)
-                        bot_finance_response = {
-                            "financial_breakdown": bot_finance_response,
-                            "link": link or "https://www.investopedia.com/financial-advisor-5070221"
-                        }
-                # Ensure required fields exist
-                if not bot_finance_response.get('financial_breakdown'):
-                    print("Missing financial_breakdown field - adding fallback")
-                    bot_finance_response['financial_breakdown'] = "Financial advice is being generated. Please check back in a moment."
-                if not bot_finance_response.get('link'):
-                    print("Missing link field - adding fallback")
-                    bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
-                    
-            except (json.JSONDecodeError, TypeError) as e:
-                print(f"Plain text or invalid JSON: {e}")
-                # GPT-style plain text response: use as breakdown, extract "Link: URL" if present
-                response_text = str(bot_finance_response).strip()
-                link_url = "https://www.investopedia.com/financial-advisor-5070221"
-                if "Link:" in response_text or "link:" in response_text:
-                    import re
-                    match = re.search(r"[Ll]ink:\s*(https?://[^\s]+)", response_text)
-                    if match:
-                        link_url = match.group(1).rstrip(".,;")
-                        response_text = response_text[:match.start()].strip()
-                if len(response_text) > 50 and not response_text.startswith("Error"):
-                    bot_finance_response = {
-                        "financial_breakdown": response_text,
-                        "link": link_url
-                    }
-                else:
-                    # Use a comprehensive fallback
-                    bot_finance_response = {
-                        "financial_breakdown": f"""Based on your business profile, here's a comprehensive financial breakdown:
+            # AI returns plain text only (no JSON) – use as breakdown, extract "Link: URL" if present
+            response_text = str(bot_finance_response).strip()
+            link_url = "https://www.investopedia.com/financial-advisor-5070221"
+            if "Link:" in response_text or "link:" in response_text:
+                match = re.search(r"[Ll]ink:\s*(https?://[^\s]+)", response_text)
+                if match:
+                    link_url = match.group(1).rstrip(".,;")
+                    response_text = response_text[:match.start()].strip()
+            if len(response_text) > 50 and not response_text.startswith("Error"):
+                bot_finance_response = {
+                    "financial_breakdown": response_text,
+                    "link": link_url
+                }
+            else:
+                # Use a comprehensive fallback
+                bot_finance_response = {
+                    "financial_breakdown": f"""Based on your business profile, here's a comprehensive financial breakdown:
 
 **Budget Allocation:**
 - 40% for core business operations
@@ -1077,8 +1053,8 @@ def financial_advice():
 - Regular financial forecasting and planning
 
 This is a general framework - please consult with a financial advisor for personalized advice.""",
-                        "link": "https://www.investopedia.com/financial-advisor-5070221"
-                    }
+                    "link": "https://www.investopedia.com/financial-advisor-5070221"
+                }
 
         # Always convert financial_breakdown to plain text/HTML for chat (never show JSON)
         bd = bot_finance_response.get("financial_breakdown")
@@ -1161,7 +1137,9 @@ def further_finance_chat():
             session["bot_finance_response"] = finance_response
             session["bot_finance_prompt"] = finance_question
 
-            return jsonify({"response": finance_response})
+            # Output plain text only (never JSON/dict)
+            out = finance_response if isinstance(finance_response, str) else (_any_to_readable_html(finance_response) if isinstance(finance_response, (dict, list)) else str(finance_response))
+            return jsonify({"response": out})
 
     except Exception as e:
         print(f"Error in further_finance_chat: {e}")
