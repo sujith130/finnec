@@ -653,6 +653,39 @@ def _markdown_to_html(text):
     return text.strip()
 
 
+def _any_to_readable_html(value, depth=0):
+    """Convert any dict/list to readable HTML. Never show raw JSON."""
+    import html
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return _markdown_to_html(value)
+    if isinstance(value, (int, float)):
+        return html.escape(str(value))
+    if isinstance(value, dict):
+        if depth > 4:
+            return "..."
+        parts = []
+        for k, v in value.items():
+            if k == "link" and isinstance(v, str):
+                continue  # link shown separately
+            label = html.escape(k.replace("_", " ").title())
+            child = _any_to_readable_html(v, depth + 1)
+            if isinstance(v, dict):
+                parts.append(f"<strong>{label}</strong><br>{child}")
+            elif isinstance(v, list):
+                parts.append(f"<strong>{label}</strong><br>{child}")
+            else:
+                parts.append(f"<strong>{label}:</strong> {child}")
+        return "<br>".join(parts)
+    if isinstance(value, list):
+        if depth > 4:
+            return "..."
+        items = [_any_to_readable_html(x, depth + 1) for x in value[:25]]
+        return "<br>• " + "<br>• ".join(items)
+    return html.escape(str(value))
+
+
 def _financial_breakdown_to_markdown(value):
     """Convert financial_breakdown to a string. Handles nested JSON (dict) or JSON string from AI."""
     if value is None:
@@ -845,6 +878,14 @@ def financial_advice():
                 print(f"Successfully parsed JSON: {parsed_response}")
                 bot_finance_response = parsed_response
                 
+                # If AI returned breakdown at top level (no "financial_breakdown" key), wrap it
+                if not bot_finance_response.get('financial_breakdown') and isinstance(bot_finance_response, dict):
+                    if any(k in bot_finance_response for k in ("introduction", "budget_allocation", "risk_management")):
+                        link = bot_finance_response.pop("link", None)
+                        bot_finance_response = {
+                            "financial_breakdown": bot_finance_response,
+                            "link": link or "https://www.investopedia.com/financial-advisor-5070221"
+                        }
                 # Ensure required fields exist
                 if not bot_finance_response.get('financial_breakdown'):
                     print("Missing financial_breakdown field - adding fallback")
@@ -900,14 +941,16 @@ This is a general framework - please consult with a financial advisor for person
                         "link": "https://www.investopedia.com/financial-advisor-5070221"
                     }
 
-        # Convert financial_breakdown to readable chat output (handles nested JSON or JSON string)
+        # Always convert financial_breakdown to HTML for chat (never show raw JSON)
         bd = bot_finance_response.get("financial_breakdown")
         if bd is not None:
-            md = _financial_breakdown_to_markdown(bd)
-            if md:
-                bot_finance_response["financial_breakdown"] = _markdown_to_html(md)
+            if isinstance(bd, (dict, list)):
+                bot_finance_response["financial_breakdown"] = _any_to_readable_html(bd)
             else:
-                bot_finance_response["financial_breakdown"] = md
+                md = _financial_breakdown_to_markdown(bd)
+                bot_finance_response["financial_breakdown"] = _markdown_to_html(md) if md else _any_to_readable_html(bd)
+        else:
+            bot_finance_response["financial_breakdown"] = ""
 
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt
