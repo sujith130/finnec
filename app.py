@@ -738,65 +738,97 @@ def _financial_breakdown_to_markdown(value):
             return s
     if not isinstance(value, dict):
         return str(value)
+    def _bullet_text(v):
+        if isinstance(v, str):
+            return v
+        if isinstance(v, dict):
+            return v.get("strategy") or v.get("recommendation") or v.get("details") or v.get("focus") or str(v)
+        return str(v)
+
     parts = []
-    # Business Overview (intro or first line)
+    # Business Overview
     if value.get("introduction"):
         parts.append("**Business Overview:**")
         parts.append(f"- {value['introduction'].strip()}")
-    # 1. Budget Allocation
+    # 1. Budget Allocation (supports percentage/amount/description OR allocation/details)
     if value.get("budget_allocation"):
         ba = value["budget_allocation"]
         parts.append("\n**1. Budget Allocation:**")
         if isinstance(ba, dict):
             for key, item in ba.items():
                 if isinstance(item, dict):
-                    pct = item.get("percentage", "")
+                    alloc = item.get("allocation", "")  # e.g. "20% ($100,000 or INR 83 Lakhs)"
+                    pct = item.get("percentage", "") or alloc
                     amt = item.get("amount", "")
-                    desc = item.get("description", "")
-                    parts.append(f"- {pct} ({amt}) - {desc}")
+                    desc = item.get("description", "") or item.get("details", "")
+                    if pct and desc:
+                        if alloc and not item.get("percentage"):
+                            parts.append(f"- {alloc} - {desc}")
+                        else:
+                            parts.append(f"- {pct} {('(' + amt + ') ') if amt else ''}- {desc}")
+                    elif pct:
+                        parts.append(f"- {pct}")
+                    else:
+                        parts.append(f"- **{key.replace('_', ' ').title()}:** {desc or str(item)}")
                 else:
                     parts.append(f"- {key.replace('_', ' ').title()}: {item}")
         else:
             parts.append(f"- {ba}")
-    # 2. Risk Management
+    # 2. Risk Management (supports plain string OR dict with "strategy")
     if value.get("risk_management_strategies"):
         rms = value["risk_management_strategies"]
         parts.append("\n**2. Risk Management:**")
         if isinstance(rms, dict):
             for k, v in rms.items():
-                parts.append(f"- {v}" if isinstance(v, str) else f"- **{k.replace('_', ' ').title()}:** {v}")
+                parts.append(f"- {_bullet_text(v)}")
         else:
             parts.append(f"- {rms}")
-    # 3. Growth Strategy
+    # 3. Growth Strategy (supports phase_1/phase_2/phase_3 with timeline+focus, scaling_strategies)
     if value.get("growth_and_expansion_plans"):
         gep = value["growth_and_expansion_plans"]
         parts.append("\n**3. Growth Strategy:**")
         if isinstance(gep, dict):
             for k, v in gep.items():
-                if isinstance(v, str):
+                if k == "scaling_strategies" and isinstance(v, str):
                     parts.append(f"- {v}")
+                elif isinstance(v, dict):
+                    t = v.get("timeline", "")
+                    f = v.get("focus", "") or v.get("strategy", "") or str(v)
+                    parts.append(f"- **{k.replace('_', ' ').title()}** ({t}): {f}" if t else f"- **{k.replace('_', ' ').title()}:** {f}")
                 else:
-                    parts.append(f"- **{k.replace('_', ' ').title()}:** {v}")
+                    parts.append(f"- {_bullet_text(v)}")
         else:
             parts.append(f"- {gep}")
-    # 4. Cash Flow Management
+    # 4. Cash Flow Management (supports dict with "strategy" or string)
     if value.get("cash_flow_management"):
         cfm = value["cash_flow_management"]
         parts.append("\n**4. Cash Flow Management:**")
         if isinstance(cfm, dict):
-            for k, v in cfm.items():
-                parts.append(f"- {v}" if isinstance(v, str) else f"- **{k.replace('_', ' ').title()}:** {v}")
+            s = cfm.get("strategy") or cfm.get("details")
+            if s:
+                parts.append(f"- {s}")
+            else:
+                for k, v in cfm.items():
+                    parts.append(f"- {_bullet_text(v)}")
         else:
             parts.append(f"- {cfm}")
-    # 5. Sector-Specific / Emergency fund
+    # 5. Emergency fund / Sector-specific (supports dict with "recommendation" or string)
     if value.get("emergency_fund_recommendations"):
         efr = value["emergency_fund_recommendations"]
         parts.append("\n**5. Sector-Specific Actions / Emergency Fund:**")
         if isinstance(efr, dict):
-            for k, v in efr.items():
-                parts.append(f"- {v}" if isinstance(v, str) else f"- **{k.replace('_', ' ').title()}:** {v}")
+            r = efr.get("recommendation") or efr.get("details")
+            if r:
+                parts.append(f"- {r}")
+            else:
+                for k, v in efr.items():
+                    parts.append(f"- {_bullet_text(v)}")
         else:
             parts.append(f"- {efr}")
+    # Additional notes (if present)
+    if value.get("additional_notes"):
+        parts.append("\n**Additional Notes:**")
+        parts.append(f"- {value['additional_notes'].strip()}")
     # Recommended Next Steps (numbered)
     next_steps = value.get("next_steps") or value.get("recommended_next_steps") or value.get("specific_strategies")
     if next_steps:
@@ -812,7 +844,7 @@ def _financial_breakdown_to_markdown(value):
     for key in value:
         if key in ("introduction", "budget_allocation", "risk_management_strategies",
                    "growth_and_expansion_plans", "cash_flow_management", "emergency_fund_recommendations",
-                   "next_steps", "recommended_next_steps", "specific_strategies"):
+                   "next_steps", "recommended_next_steps", "specific_strategies", "additional_notes"):
             continue
         v = value[key]
         if isinstance(v, (str, int, float)) and v:
