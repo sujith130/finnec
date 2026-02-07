@@ -275,57 +275,103 @@ def get_business_idea(country, country_interest, capital_loan, amount, domain_in
 
 def get_financial_advice(country, country_interest, description, capital_loan, amount, domain_interest, loan_pay_month):
     """
-    Generates a prompt for obtaining financial advice based on the user's financial status and business interests, and gets a response.
+    Generates a prompt for obtaining financial advice. Asks for plain-text GPT-style output (no JSON).
     """
-    # Define the required format for the response
-    format = '''
-    {
-        "financial_breakdown": "Provide detailed financial advice here including budget allocation, risk management, and growth strategies",
-        "link": "https://example.com/financial-resources"
-    }
-    '''
-   
     try:
-        # Construct the message prompt with more specific instructions
         if capital_loan == 'capital':
             prompt = f"""You are a financial advisor. I'm from {country} and want to start a business in {country_interest}. 
-            I have a capital of {amount} US Dollars. My business domain is {domain_interest}. 
-            Business description: {description}
-            
-            Please provide a comprehensive financial breakdown including:
-            1. Budget allocation for different business needs
-            2. Risk management strategies
-            3. Growth and expansion plans
-            4. Cash flow management
-            5. Emergency fund recommendations
-            
-            Respond ONLY in this exact JSON format: {format}
-            
-            Make the financial_breakdown detailed and actionable. Provide a relevant link for additional resources."""
+I have a capital of {amount} US Dollars. My business domain is {domain_interest}. 
+Business description: {description}
+
+Reply in plain text only, like a chat message. Do NOT use JSON, code blocks, or curly braces.
+Use this exact structure with **bold** for headers and - for bullets:
+
+**Business Overview:**
+- Domain: (domain)
+- Location: (location)
+- Capital/Loan Type: Capital
+- Available Amount: ₹(amount in INR)
+- Description: (short description)
+
+**1. Budget Allocation (₹amount in INR):**
+- 40% (₹x) - Core business operations and infrastructure
+- 25% (₹x) - Marketing and customer acquisition
+- 20% (₹x) - Technology and digital tools
+- 10% (₹x) - Emergency fund and reserves
+- 5% (₹x) - Professional services and legal
+
+**2. Risk Management:**
+- (bullet points)
+
+**3. Growth Strategy:**
+- (bullet points)
+
+**4. Cash Flow Management:**
+- (bullet points)
+
+**5. Sector-Specific Actions (domain):**
+- (bullet points)
+
+**Recommended Next Steps:**
+1. (step one)
+2. (step two)
+3. (step three)
+4. (step four)
+5. (step five)
+
+At the very end write exactly: Link: https://www.investindia.gov.in/startupindia
+(or another relevant Indian/financial resource URL)
+
+Reply with the full breakdown in plain text only."""
         elif capital_loan == 'loan':
             prompt = f"""You are a financial advisor. I'm from {country} and want to start a business in {country_interest}. 
-            I got a loan of {amount} US Dollars and must repay it in {loan_pay_month} months. My business domain is {domain_interest}. 
-            Business description: {description}
-            
-            Please provide a comprehensive financial breakdown including:
-            1. Loan repayment strategy
-            2. Budget allocation considering loan payments
-            3. Risk management strategies
-            4. Cash flow management for loan servicing
-            5. Growth plans within loan constraints
-            
-            Respond ONLY in this exact JSON format: {format}
-            
-            Make the financial_breakdown detailed and actionable. Provide a relevant link for additional resources."""
+I got a loan of {amount} US Dollars and must repay it in {loan_pay_month} months. My business domain is {domain_interest}. 
+Business description: {description}
+
+Reply in plain text only, like a chat message. Do NOT use JSON, code blocks, or curly braces.
+Use this exact structure with **bold** for headers and - for bullets:
+
+**Business Overview:**
+- Domain: (domain)
+- Location: (location)
+- Capital/Loan Type: Loan
+- Available Amount: ₹(amount in INR)
+- Repayment: (loan_pay_month) months
+- Description: (short description)
+
+**1. Budget Allocation (₹amount in INR):**
+- (include loan repayment in allocation; use bullet points with percentages and amounts)
+
+**2. Risk Management:**
+- (bullet points)
+
+**3. Growth Strategy:**
+- (bullet points)
+
+**4. Cash Flow Management:**
+- (bullet points)
+
+**5. Sector-Specific Actions (domain):**
+- (bullet points)
+
+**Recommended Next Steps:**
+1. (step one)
+2. (step two)
+3. (step three)
+4. (step four)
+5. (step five)
+
+At the very end write exactly: Link: https://www.investindia.gov.in/startupindia
+(or another relevant URL)
+
+Reply with the full breakdown in plain text only."""
         else:
-            # Fallback if capital_loan is missing or invalid
             prompt = f"""You are a financial advisor. I'm from {country} and want to start a business in {country_interest}. 
-            My business domain is {domain_interest}. Business description: {description}
-            Please provide a comprehensive financial breakdown in this exact JSON format: {format}"""
+My business domain is {domain_interest}. Business description: {description}
 
-        # Generate the response for the prompt
+Reply in plain text only, like a chat message. Do NOT use JSON. Use **bold** for section headers and - for bullets. Include: Business Overview, 1. Budget Allocation, 2. Risk Management, 3. Growth Strategy, 4. Cash Flow Management, 5. Sector-Specific Actions, Recommended Next Steps (numbered). End with: Link: https://www.investindia.gov.in/startupindia"""
+
         advice_response = get_response(prompt)
-
         return prompt, advice_response
 
     except Exception as e:
@@ -985,17 +1031,20 @@ def financial_advice():
                     bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
                     
             except (json.JSONDecodeError, TypeError) as e:
-                print(f"Error decoding JSON: {e}")
-                print(f"Raw response that failed to parse: {bot_finance_response}")
-                
-                # If JSON parsing fails, create a fallback response
-                # Check if the response looks like it contains useful content
+                print(f"Plain text or invalid JSON: {e}")
+                # GPT-style plain text response: use as breakdown, extract "Link: URL" if present
                 response_text = str(bot_finance_response).strip()
+                link_url = "https://www.investopedia.com/financial-advisor-5070221"
+                if "Link:" in response_text or "link:" in response_text:
+                    import re
+                    match = re.search(r"[Ll]ink:\s*(https?://[^\s]+)", response_text)
+                    if match:
+                        link_url = match.group(1).rstrip(".,;")
+                        response_text = response_text[:match.start()].strip()
                 if len(response_text) > 50 and not response_text.startswith("Error"):
-                    # Use the raw response as financial breakdown
                     bot_finance_response = {
                         "financial_breakdown": response_text,
-                        "link": "https://www.investopedia.com/financial-advisor-5070221"
+                        "link": link_url
                     }
                 else:
                     # Use a comprehensive fallback
