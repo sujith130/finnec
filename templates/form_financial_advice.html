@@ -115,6 +115,11 @@
     <section class="form-section">
       <div class="form-container">
         <div class="accordion-list">
+          {% if error_message %}
+          <div class="alert alert-danger" role="alert" style="background-color:#c0392b; color:white; border:none; margin-bottom:1rem;">
+            {{ error_message }}
+          </div>
+          {% endif %}
           <form style="text-shadow:none;position: relative; text-align: left; color: white;" method="POST"
             action="{{url_for('financial_advice')}}">
 

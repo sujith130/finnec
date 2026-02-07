@@ -9,8 +9,10 @@ import joblib
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (.env, then config.env for Render/gunicorn, then production.env)
 load_dotenv()
+load_dotenv("config.env")
+load_dotenv("production.env")
 
 
 # Initialize the Flask application  
@@ -267,6 +269,11 @@ def get_financial_advice(country, country_interest, description, capital_loan, a
             Respond ONLY in this exact JSON format: {format}
             
             Make the financial_breakdown detailed and actionable. Provide a relevant link for additional resources."""
+        else:
+            # Fallback if capital_loan is missing or invalid
+            prompt = f"""You are a financial advisor. I'm from {country} and want to start a business in {country_interest}. 
+            My business domain is {domain_interest}. Business description: {description}
+            Please provide a comprehensive financial breakdown in this exact JSON format: {format}"""
 
         # Generate the response for the prompt
         advice_response = get_response(prompt)
@@ -567,23 +574,47 @@ def further_business_chat():
         return jsonify({"error": "An error occurred during the business chat."})
 
 
+def _safe_amount_num(amount_str, default=0):
+    """Parse amount from form (handles commas, decimals, empty). Returns int for display."""
+    try:
+        s = str(amount_str).replace(",", "").replace(" ", "").strip()
+        return int(float(s)) if s else default
+    except (ValueError, TypeError):
+        return default
+
+
 @app.route('/financial_advice', methods=["GET", "POST"])
 def financial_advice():
     try:
-        country_interest = request.form['country_interest'].capitalize()
-        capital_loan = request.form['capital_loan']
-        description = request.form['description']
-        amount = request.form['amount']
-        domain_interest = request.form['domain_interest']
-        loan_pay_month = request.form['loan_pay_month']
+        country_interest = request.form.get('country_interest', '').strip().capitalize() or 'India'
+        capital_loan = request.form.get('capital_loan', 'capital')
+        description = request.form.get('description', '')
+        amount = request.form.get('amount', '0')
+        domain_interest = request.form.get('domain_interest', '')
+        loan_pay_month = request.form.get('loan_pay_month', '0')
 
-        country = session.get("country", None)
+        country = session.get("country", None) or "India"
         name = session.get("name", None)
 
-        bot_finance_prompt, bot_finance_response = get_financial_advice(country=country, country_interest=country_interest, description=description, capital_loan=capital_loan, amount=amount, domain_interest=domain_interest, loan_pay_month=loan_pay_month)
+        amount_num = _safe_amount_num(amount)
+
+        try:
+            bot_finance_prompt, bot_finance_response = get_financial_advice(country=country, country_interest=country_interest, description=description, capital_loan=capital_loan, amount=amount, domain_interest=domain_interest, loan_pay_month=loan_pay_month)
+        except Exception as ai_err:
+            print(f"get_financial_advice raised: {ai_err}")
+            import traceback
+            traceback.print_exc()
+            bot_finance_prompt = ""
+            bot_finance_response = None
         
-        # Check if the AI call completely failed
-        if bot_finance_response is None or bot_finance_response.startswith("Error occurred"):
+        # Treat any error-like or non-JSON string as failure and use fallback
+        def _is_error_response(r):
+            if r is None: return True
+            if not isinstance(r, str): return False
+            s = r.strip().lower()
+            return (s.startswith("error") or "invalid" in s or "api key" in s or "quota" in s or "not available" in s or len(s) < 20)
+        
+        if _is_error_response(bot_finance_response):
             print("AI call failed completely, using comprehensive fallback")
             bot_finance_response = {
                 "financial_breakdown": f"""Based on your business profile for {domain_interest} in {country_interest}, here's a comprehensive financial breakdown:
@@ -591,17 +622,17 @@ def financial_advice():
 **Business Overview:**
 - Domain: {domain_interest}
 - Location: {country_interest}
-- Capital/Loan: {capital_loan.title()} of ₹{amount:,}
+- Capital/Loan: {capital_loan.title()} of ₹{amount_num:,}
 - Description: {description}
 
 **Financial Planning Framework:**
 
-**1. Budget Allocation (₹{amount:,}):**
-- 40% (₹{int(amount) * 0.4:,}) - Core business operations and infrastructure
-- 25% (₹{int(amount) * 0.25:,}) - Marketing and customer acquisition
-- 20% (₹{int(amount) * 0.2:,}) - Technology and digital tools
-- 10% (₹{int(amount) * 0.1:,}) - Emergency fund and reserves
-- 5% (₹{int(amount) * 0.05:,}) - Professional services and legal
+**1. Budget Allocation (₹{amount_num:,}):**
+- 40% (₹{int(amount_num * 0.4):,}) - Core business operations and infrastructure
+- 25% (₹{int(amount_num * 0.25):,}) - Marketing and customer acquisition
+- 20% (₹{int(amount_num * 0.2):,}) - Technology and digital tools
+- 10% (₹{int(amount_num * 0.1):,}) - Emergency fund and reserves
+- 5% (₹{int(amount_num * 0.05):,}) - Professional services and legal
 
 **2. Risk Management:**
 - Maintain 3-6 months operating expenses in reserve
@@ -654,9 +685,15 @@ def financial_advice():
                 "financial_breakdown": "I apologize, but I'm having trouble generating your financial advice at the moment. Please try again or contact support.",
                 "link": "https://www.investopedia.com/financial-advisor-5070221"
             }
+        elif isinstance(bot_finance_response, dict):
+            # Already a dict (e.g. from fallback above) – ensure required keys
+            if not bot_finance_response.get('financial_breakdown'):
+                bot_finance_response['financial_breakdown'] = "Financial advice is being generated. Please check back in a moment."
+            if not bot_finance_response.get('link'):
+                bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
         else:
             try:
-                # Try to parse as JSON
+                # Try to parse as JSON (AI returns a string)
                 parsed_response = json.loads(bot_finance_response)
                 print(f"Successfully parsed JSON: {parsed_response}")
                 bot_finance_response = parsed_response
@@ -669,7 +706,7 @@ def financial_advice():
                     print("Missing link field - adding fallback")
                     bot_finance_response['link'] = "https://www.investopedia.com/financial-advisor-5070221"
                     
-            except json.JSONDecodeError as e:
+            except (json.JSONDecodeError, TypeError) as e:
                 print(f"Error decoding JSON: {e}")
                 print(f"Raw response that failed to parse: {bot_finance_response}")
                 
@@ -719,11 +756,30 @@ This is a general framework - please consult with a financial advisor for person
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt
 
-        return render_template('chat_finance.html', name=name, country=country, bot_finance_response=bot_finance_response)
+        return render_template(
+            'chat_finance.html',
+            name=name or "Guest",
+            country=country or "India",
+            bot_finance_response=bot_finance_response,
+        )
 
     except Exception as e:
+        import traceback
         print(f"Error in financial_advice: {e}")
-        return "An error occurred while processing your financial advice."
+        traceback.print_exc()
+        err_msg = "An error occurred while processing your financial advice. Please check your inputs and try again. If the problem continues, ensure GEMINI_API_KEY is set in Render Environment (or in config.env)."
+        try:
+            return render_template(
+                "form_financial_advice.html",
+                error_message=err_msg
+            ), 200
+        except Exception as template_err:
+            print(f"Error rendering error template: {template_err}")
+            return (
+                f'<html><body style="font-family:sans-serif;padding:2rem;"><h2>Financial advice could not be generated</h2><p>{err_msg}</p><p><a href="/form_financial_advice">Back to form</a></p></body></html>',
+                200,
+                {"Content-Type": "text/html"},
+            )
 
 
 @app.route('/further_finance_chat', methods=["GET", "POST"])
