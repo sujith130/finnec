@@ -642,15 +642,51 @@ def _safe_amount_num(amount_str, default=0):
 
 
 def _markdown_to_html(text):
-    """Simple markdown to HTML for chat: **bold** and newlines."""
+    """Convert markdown to HTML for chat: **bold**, bullet lists, numbered lists."""
     if not text or not isinstance(text, str):
         return ""
     import re
-    # **bold** -> <strong>bold</strong>
-    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
-    # newlines -> <br>
-    text = text.replace('\n', '<br>\n')
-    return text.strip()
+    lines = text.split("\n")
+    out = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        # Bold section headers (**...** or **...**:)
+        stripped = line.strip()
+        if stripped.startswith("**"):
+            head = stripped[2:].rstrip("*:").strip()
+            if head:
+                out.append(f"<p class=\"breakdown-head\"><strong>{head}</strong></p>")
+                i += 1
+                continue
+        # Numbered list (1. 2. 3.)
+        if re.match(r"^\s*\d+\.\s+", line):
+            ol = ["<ol class=\"breakdown-list\">"]
+            while i < len(lines) and re.match(r"^\s*\d+\.\s+", lines[i]):
+                ol.append("<li>" + re.sub(r"^\s*\d+\.\s+", "", lines[i]).strip() + "</li>")
+                i += 1
+            ol.append("</ol>")
+            out.append("\n".join(ol))
+            continue
+        # Bullet list (- item)
+        if line.strip().startswith("- "):
+            ul = ["<ul class=\"breakdown-list\">"]
+            while i < len(lines) and (lines[i].strip().startswith("- ") or (lines[i].strip() == "" and i + 1 < len(lines) and lines[i + 1].strip().startswith("- "))):
+                if lines[i].strip().startswith("- "):
+                    content = lines[i].strip()[2:].strip()
+                    # Bold inside bullet
+                    content = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", content)
+                    ul.append("<li>" + content + "</li>")
+                i += 1
+            ul.append("</ul>")
+            out.append("\n".join(ul))
+            continue
+        # Plain line: bold then rest
+        line = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", line)
+        if line.strip():
+            out.append("<p>" + line.strip() + "</p>")
+        i += 1
+    return "\n".join(out)
 
 
 def _any_to_readable_html(value, depth=0):
@@ -703,62 +739,85 @@ def _financial_breakdown_to_markdown(value):
     if not isinstance(value, dict):
         return str(value)
     parts = []
+    # Business Overview (intro or first line)
     if value.get("introduction"):
-        parts.append(value["introduction"].strip())
+        parts.append("**Business Overview:**")
+        parts.append(f"- {value['introduction'].strip()}")
+    # 1. Budget Allocation
     if value.get("budget_allocation"):
         ba = value["budget_allocation"]
-        parts.append("\n**Budget allocation**\n")
+        parts.append("\n**1. Budget Allocation:**")
         if isinstance(ba, dict):
             for key, item in ba.items():
                 if isinstance(item, dict):
                     pct = item.get("percentage", "")
                     amt = item.get("amount", "")
                     desc = item.get("description", "")
-                    parts.append(f"- **{key.replace('_', ' ').title()}** ({pct} {amt}): {desc}\n")
+                    parts.append(f"- {pct} ({amt}) - {desc}")
                 else:
-                    parts.append(f"- {key}: {item}\n")
+                    parts.append(f"- {key.replace('_', ' ').title()}: {item}")
         else:
-            parts.append(str(ba))
+            parts.append(f"- {ba}")
+    # 2. Risk Management
     if value.get("risk_management_strategies"):
         rms = value["risk_management_strategies"]
-        parts.append("\n**Risk management**\n")
+        parts.append("\n**2. Risk Management:**")
         if isinstance(rms, dict):
             for k, v in rms.items():
-                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+                parts.append(f"- {v}" if isinstance(v, str) else f"- **{k.replace('_', ' ').title()}:** {v}")
         else:
-            parts.append(str(rms))
+            parts.append(f"- {rms}")
+    # 3. Growth Strategy
     if value.get("growth_and_expansion_plans"):
         gep = value["growth_and_expansion_plans"]
-        parts.append("\n**Growth & expansion**\n")
+        parts.append("\n**3. Growth Strategy:**")
         if isinstance(gep, dict):
             for k, v in gep.items():
-                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+                if isinstance(v, str):
+                    parts.append(f"- {v}")
+                else:
+                    parts.append(f"- **{k.replace('_', ' ').title()}:** {v}")
         else:
-            parts.append(str(gep))
+            parts.append(f"- {gep}")
+    # 4. Cash Flow Management
     if value.get("cash_flow_management"):
         cfm = value["cash_flow_management"]
-        parts.append("\n**Cash flow**\n")
+        parts.append("\n**4. Cash Flow Management:**")
         if isinstance(cfm, dict):
             for k, v in cfm.items():
-                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+                parts.append(f"- {v}" if isinstance(v, str) else f"- **{k.replace('_', ' ').title()}:** {v}")
         else:
-            parts.append(str(cfm))
+            parts.append(f"- {cfm}")
+    # 5. Sector-Specific / Emergency fund
     if value.get("emergency_fund_recommendations"):
         efr = value["emergency_fund_recommendations"]
-        parts.append("\n**Emergency fund**\n")
+        parts.append("\n**5. Sector-Specific Actions / Emergency Fund:**")
         if isinstance(efr, dict):
             for k, v in efr.items():
-                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+                parts.append(f"- {v}" if isinstance(v, str) else f"- **{k.replace('_', ' ').title()}:** {v}")
         else:
-            parts.append(str(efr))
+            parts.append(f"- {efr}")
+    # Recommended Next Steps (numbered)
+    next_steps = value.get("next_steps") or value.get("recommended_next_steps") or value.get("specific_strategies")
+    if next_steps:
+        parts.append("\n**Recommended Next Steps:**")
+        if isinstance(next_steps, list):
+            for idx, step in enumerate(next_steps[:10], 1):
+                parts.append(f"{idx}. {step}" if isinstance(step, str) else f"{idx}. {step}")
+        elif isinstance(next_steps, str):
+            parts.append(f"1. {next_steps}")
+        elif isinstance(next_steps, dict):
+            for idx, (k, v) in enumerate(next_steps.items(), 1):
+                parts.append(f"{idx}. {v}" if isinstance(v, str) else f"{idx}. {k}: {v}")
     for key in value:
         if key in ("introduction", "budget_allocation", "risk_management_strategies",
-                   "growth_and_expansion_plans", "cash_flow_management", "emergency_fund_recommendations"):
+                   "growth_and_expansion_plans", "cash_flow_management", "emergency_fund_recommendations",
+                   "next_steps", "recommended_next_steps", "specific_strategies"):
             continue
         v = value[key]
         if isinstance(v, (str, int, float)) and v:
-            parts.append(f"\n**{key.replace('_', ' ').title()}:** {v}\n")
-    return "\n".join(parts).strip() if parts else json.dumps(value, indent=2)
+            parts.append(f"\n**{key.replace('_', ' ').title()}:** {v}")
+    return "\n".join(parts).strip() if parts else ""
 
 
 @app.route('/financial_advice', methods=["GET", "POST"])
@@ -802,10 +861,9 @@ def financial_advice():
 **Business Overview:**
 - Domain: {domain_interest}
 - Location: {country_interest}
-- Capital/Loan: {capital_loan.title()} of ₹{amount_num:,}
+- Capital/Loan Type: {capital_loan.title()}
+- Available Amount: ₹{amount_num:,}
 - Description: {description}
-
-**Financial Planning Framework:**
 
 **1. Budget Allocation (₹{amount_num:,}):**
 - 40% (₹{int(amount_num * 0.4):,}) - Core business operations and infrastructure
@@ -835,14 +893,14 @@ def financial_advice():
 - Regular financial forecasting and scenario planning
 - Monitor key performance indicators (KPIs)
 
-**5. Sector-Specific Considerations for {domain_interest}:**
+**5. Sector-Specific Actions ({domain_interest}):**
 - Research industry-specific financial requirements
 - Understand regulatory compliance costs
 - Plan for seasonal variations in revenue
 - Consider technology investments for efficiency
 - Build relationships with industry experts
 
-**Next Steps:**
+**Recommended Next Steps:**
 1. Create detailed monthly budget tracking
 2. Set up business banking and accounting systems
 3. Research {domain_interest} industry benchmarks
@@ -941,10 +999,13 @@ This is a general framework - please consult with a financial advisor for person
                         "link": "https://www.investopedia.com/financial-advisor-5070221"
                     }
 
-        # Always convert financial_breakdown to HTML for chat (never show raw JSON)
+        # Always convert financial_breakdown to HTML for chat (match image: sections 1–5, bullets, Read more)
         bd = bot_finance_response.get("financial_breakdown")
         if bd is not None:
-            if isinstance(bd, (dict, list)):
+            if isinstance(bd, dict):
+                md = _financial_breakdown_to_markdown(bd)
+                bot_finance_response["financial_breakdown"] = _markdown_to_html(md) if md else _any_to_readable_html(bd)
+            elif isinstance(bd, list):
                 bot_finance_response["financial_breakdown"] = _any_to_readable_html(bd)
             else:
                 md = _financial_breakdown_to_markdown(bd)
