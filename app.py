@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, session, jsonify
+from flask import Flask, request, render_template, session, jsonify, redirect, url_for
 import numpy as np
 import pandas as pd
 import requests
@@ -9,10 +9,11 @@ import joblib
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Load environment variables (.env, then config.env for Render/gunicorn, then production.env)
-load_dotenv()
-load_dotenv("config.env")
-load_dotenv("production.env")
+# Load environment variables from repo root (same dir as app.py)
+_app_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_app_dir, ".env"))
+load_dotenv(os.path.join(_app_dir, "config.env"))
+load_dotenv(os.path.join(_app_dir, "production.env"))
 
 
 # Initialize the Flask application  
@@ -585,6 +586,8 @@ def _safe_amount_num(amount_str, default=0):
 
 @app.route('/financial_advice', methods=["GET", "POST"])
 def financial_advice():
+    if request.method != "POST":
+        return redirect(url_for("form_financial_advice"))
     try:
         country_interest = request.form.get('country_interest', '').strip().capitalize() or 'India'
         capital_loan = request.form.get('capital_loan', 'capital')
@@ -765,9 +768,17 @@ This is a general framework - please consult with a financial advisor for person
 
     except Exception as e:
         import traceback
+        import html
+        err_type = type(e).__name__
+        err_detail = str(e)
         print(f"Error in financial_advice: {e}")
         traceback.print_exc()
-        err_msg = "An error occurred while processing your financial advice. Please check your inputs and try again. If the problem continues, ensure GEMINI_API_KEY is set in Render Environment (or in config.env)."
+        err_msg = (
+            "An error occurred while processing your financial advice. "
+            "Set GEMINI_API_KEY and SECRET_KEY in Render → Environment; then check /test_api_key. "
+            "Technical detail: " + err_type + ": " + err_detail
+        )
+        err_msg_safe = html.escape(err_msg)
         try:
             return render_template(
                 "form_financial_advice.html",
@@ -776,9 +787,12 @@ This is a general framework - please consult with a financial advisor for person
         except Exception as template_err:
             print(f"Error rendering error template: {template_err}")
             return (
-                f'<html><body style="font-family:sans-serif;padding:2rem;"><h2>Financial advice could not be generated</h2><p>{err_msg}</p><p><a href="/form_financial_advice">Back to form</a></p></body></html>',
+                f'<html><body style="font-family:sans-serif;padding:2rem;max-width:600px;">'
+                f'<h2>Financial advice could not be generated</h2><p>{err_msg_safe}</p>'
+                f'<p><a href="/form_financial_advice">Back to form</a></p>'
+                f'<p><a href="/test_api_key">Test API key</a></p></body></html>',
                 200,
-                {"Content-Type": "text/html"},
+                {"Content-Type": "text/html; charset=utf-8"},
             )
 
 
