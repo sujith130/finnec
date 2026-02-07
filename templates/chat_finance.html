@@ -91,7 +91,8 @@
                             Here is your financial breakdown based on your interest:<br><br>
 
                             {% if bot_finance_response and bot_finance_response.get('financial_breakdown') %}
-                                <div class="financial-breakdown">{{ (bot_finance_response['financial_breakdown'] or '')|safe }}</div><br><br>
+                                {% set bd = bot_finance_response['financial_breakdown'] %}
+                                <div class="financial-breakdown">{% if bd is string %}{{ (bd or '')|safe }}{% else %}<p>Submit the form again to see your breakdown.</p>{% endif %}</div><br><br>
                             {% else %}
                                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff;">
                                     <h4>Financial Advisory Framework</h4>

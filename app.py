@@ -1031,7 +1031,7 @@ This is a general framework - please consult with a financial advisor for person
                         "link": "https://www.investopedia.com/financial-advisor-5070221"
                     }
 
-        # Always convert financial_breakdown to HTML for chat (match image: sections 1–5, bullets, Read more)
+        # Always convert financial_breakdown to plain text/HTML for chat (never show JSON)
         bd = bot_finance_response.get("financial_breakdown")
         if bd is not None:
             if isinstance(bd, dict):
@@ -1041,9 +1041,15 @@ This is a general framework - please consult with a financial advisor for person
                 bot_finance_response["financial_breakdown"] = _any_to_readable_html(bd)
             else:
                 md = _financial_breakdown_to_markdown(bd)
-                bot_finance_response["financial_breakdown"] = _markdown_to_html(md) if md else _any_to_readable_html(bd)
+                bot_finance_response["financial_breakdown"] = _markdown_to_html(md) if md else _any_to_readable_html(str(bd))
         else:
             bot_finance_response["financial_breakdown"] = ""
+
+        # Guarantee template never receives JSON/dict: always string (HTML)
+        if not isinstance(bot_finance_response.get("financial_breakdown"), str):
+            bot_finance_response["financial_breakdown"] = _any_to_readable_html(
+                bot_finance_response.get("financial_breakdown")
+            )
 
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt
