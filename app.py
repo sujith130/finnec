@@ -1051,6 +1051,14 @@ This is a general framework - please consult with a financial advisor for person
                 bot_finance_response.get("financial_breakdown")
             )
 
+        # Prepend intro line like the reference: "Based on your business profile for X in Y, here's a comprehensive financial breakdown:"
+        html_escape = __import__("html").escape
+        intro = (
+            f'<p class="breakdown-intro">Based on your business profile for <strong>{html_escape(domain_interest)}</strong> '
+            f'in <strong>{html_escape(country_interest)}</strong>, here\'s a comprehensive financial breakdown:</p>'
+        )
+        bot_finance_response["financial_breakdown"] = intro + (bot_finance_response.get("financial_breakdown") or "")
+
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt
 
