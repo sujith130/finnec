@@ -641,6 +641,73 @@ def _safe_amount_num(amount_str, default=0):
         return default
 
 
+def _financial_breakdown_to_markdown(value):
+    """Convert financial_breakdown to a string. Handles nested JSON (dict) from AI."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if not isinstance(value, dict):
+        return str(value)
+    parts = []
+    if value.get("introduction"):
+        parts.append(value["introduction"].strip())
+    if value.get("budget_allocation"):
+        ba = value["budget_allocation"]
+        parts.append("\n**Budget allocation**\n")
+        if isinstance(ba, dict):
+            for key, item in ba.items():
+                if isinstance(item, dict):
+                    pct = item.get("percentage", "")
+                    amt = item.get("amount", "")
+                    desc = item.get("description", "")
+                    parts.append(f"- **{key.replace('_', ' ').title()}** ({pct} {amt}): {desc}\n")
+                else:
+                    parts.append(f"- {key}: {item}\n")
+        else:
+            parts.append(str(ba))
+    if value.get("risk_management_strategies"):
+        rms = value["risk_management_strategies"]
+        parts.append("\n**Risk management**\n")
+        if isinstance(rms, dict):
+            for k, v in rms.items():
+                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+        else:
+            parts.append(str(rms))
+    if value.get("growth_and_expansion_plans"):
+        gep = value["growth_and_expansion_plans"]
+        parts.append("\n**Growth & expansion**\n")
+        if isinstance(gep, dict):
+            for k, v in gep.items():
+                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+        else:
+            parts.append(str(gep))
+    if value.get("cash_flow_management"):
+        cfm = value["cash_flow_management"]
+        parts.append("\n**Cash flow**\n")
+        if isinstance(cfm, dict):
+            for k, v in cfm.items():
+                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+        else:
+            parts.append(str(cfm))
+    if value.get("emergency_fund_recommendations"):
+        efr = value["emergency_fund_recommendations"]
+        parts.append("\n**Emergency fund**\n")
+        if isinstance(efr, dict):
+            for k, v in efr.items():
+                parts.append(f"- **{k.replace('_', ' ').title()}:** {v}\n")
+        else:
+            parts.append(str(efr))
+    for key in value:
+        if key in ("introduction", "budget_allocation", "risk_management_strategies",
+                   "growth_and_expansion_plans", "cash_flow_management", "emergency_fund_recommendations"):
+            continue
+        v = value[key]
+        if isinstance(v, (str, int, float)) and v:
+            parts.append(f"\n**{key.replace('_', ' ').title()}:** {v}\n")
+    return "\n".join(parts).strip() if parts else json.dumps(value, indent=2)
+
+
 @app.route('/financial_advice', methods=["GET", "POST"])
 def financial_advice():
     if request.method != "POST":
@@ -812,6 +879,12 @@ def financial_advice():
 This is a general framework - please consult with a financial advisor for personalized advice.""",
                         "link": "https://www.investopedia.com/financial-advisor-5070221"
                     }
+
+        # Ensure financial_breakdown is always a string (AI sometimes returns nested JSON)
+        if isinstance(bot_finance_response.get("financial_breakdown"), dict):
+            bot_finance_response["financial_breakdown"] = _financial_breakdown_to_markdown(
+                bot_finance_response["financial_breakdown"]
+            )
 
         session["bot_finance_response"] = bot_finance_response
         session["bot_finance_prompt"] = bot_finance_prompt

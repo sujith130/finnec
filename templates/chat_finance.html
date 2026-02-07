@@ -90,8 +90,8 @@
                         
                             Here is your financial breakdown based on your interest:<br><br>
 
-                            {% if bot_finance_response and bot_finance_response.get('financial_breakdown') and bot_finance_response['financial_breakdown'].strip() %}
-                                {{bot_finance_response['financial_breakdown']|safe}}<br><br>
+                            {% if bot_finance_response and bot_finance_response.get('financial_breakdown') and (bot_finance_response['financial_breakdown'] or '')|length %}
+                                {{ (bot_finance_response['financial_breakdown'] or '')|safe }}<br><br>
                             {% else %}
                                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff;">
                                     <h4>Financial Advisory Framework</h4>
