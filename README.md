@@ -38,7 +38,8 @@ Set required environment variables. You can use `config.env` (loaded automatical
 
 Required:
 - `GEMINI_API_KEY` – your Google AI Studio API key
-- `SECRET_KEY` – Flask secret key
+- `OPENROUTER_API_KEY` – your OpenRouter API key (sk-or-v1-...)
+- `SECRET_KEY` – Flask session secret (can be same as OpenRouter key)
 
 Options:
 - `FLASK_ENV` – `development` or `production` (defaults to development)

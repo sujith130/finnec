@@ -1,6 +1,6 @@
 # Do this now – get Finnec running on Render
 
-Your **GEMINI_API_KEY** and **SECRET_KEY** are already in `config.env` in this repo. The app loads them on start.
+Your **GEMINI_API_KEY** (Google), **OPENROUTER_API_KEY** (OpenRouter), and **SECRET_KEY** (Flask; can be same as OpenRouter key) are in `config.env`. The app loads them on start.
 
 ## Option A: Just redeploy (try this first)
 
@@ -18,13 +18,15 @@ Your **GEMINI_API_KEY** and **SECRET_KEY** are already in `config.env` in this r
 4. Click **Add Environment Variable** and add:
 
    - **Key:** `GEMINI_API_KEY`  
-     **Value:** `AIzaSyCl8rMD9MQIwdiRitfrKVbGknDMwlcg_oo`  
-     (or your own key from [Google AI Studio](https://aistudio.google.com/apikey))  
+     **Value:** your Google Gemini key (from [Google AI Studio](https://aistudio.google.com/apikey))  
+     Turn **Secret** on.
+
+   - **Key:** `OPENROUTER_API_KEY`  
+     **Value:** your OpenRouter key (sk-or-v1-... from [OpenRouter](https://openrouter.ai/keys))  
      Turn **Secret** on.
 
    - **Key:** `SECRET_KEY`  
-     **Value:** `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`  
-     (or any long random string)  
+     **Value:** same as OpenRouter key, or any long random string (Flask sessions)  
      Turn **Secret** on.
 
 5. Click **Save**. Render will redeploy.

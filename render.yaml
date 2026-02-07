@@ -14,5 +14,7 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
       - key: SECRET_KEY
         sync: false

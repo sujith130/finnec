@@ -15,13 +15,15 @@
 2. Go to **Environment**.
 3. Add these variables (use **Add Environment Variable**):
 
-   | Key             | Value                    | Secret? |
-   |-----------------|--------------------------|--------|
-   | `GEMINI_API_KEY`| Your Google AI API key   | Yes    |
-   | `SECRET_KEY`    | A long random string     | Yes    |
+   | Key                   | Value                    | Secret? |
+   |-----------------------|--------------------------|--------|
+   | `GEMINI_API_KEY`      | Your Google AI API key   | Yes    |
+   | `OPENROUTER_API_KEY`  | Your OpenRouter key (sk-or-v1-...) | Yes |
+   | `SECRET_KEY`          | Flask session secret (can use same as OpenRouter key) | Yes |
 
-   - **GEMINI_API_KEY:** from [Google AI Studio](https://aistudio.google.com/apikey) (Create API key).
-   - **SECRET_KEY:** any long random string (e.g. 32+ characters). You can use the same value as in your local `config.env` if you want.
+   - **GEMINI_API_KEY:** from [Google AI Studio](https://aistudio.google.com/apikey).
+   - **OPENROUTER_API_KEY:** from [OpenRouter](https://openrouter.ai/keys) (the “secret key” / sk-or-v1-... one).
+   - **SECRET_KEY:** any long random string for Flask sessions, or the same value as `OPENROUTER_API_KEY`.
 
 4. Save. Render will redeploy automatically.
 

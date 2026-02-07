@@ -59,9 +59,52 @@ def list_available_models():
         return []
 
 
+def _get_response_openrouter(prompt):
+    """Call OpenRouter API as fallback. Returns response text or None."""
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if not api_key:
+        return None
+    openrouter_models = [
+        "google/gemini-2.0-flash-001",
+        "google/gemini-flash-1.5",
+        "google/gemini-pro-1.5",
+    ]
+    for model_id in openrouter_models:
+        try:
+            print(f"Trying OpenRouter model: {model_id}")
+            r = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model_id,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 1,
+                    "max_tokens": 8192,
+                },
+                timeout=60,
+            )
+            r.raise_for_status()
+            data = r.json()
+            content = (data.get("choices") or [{}])[0].get("message", {}).get("content")
+            if content:
+                print(f"OpenRouter succeeded with {model_id}")
+                return content.strip()
+        except Exception as e:
+            print(f"OpenRouter {model_id} failed: {e}")
+            continue
+    return None
+
+
 def get_response(prompt):
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
+        # Try OpenRouter only if no Gemini key
+        text = _get_response_openrouter(prompt)
+        if text:
+            return text
         raise ValueError("GEMINI_API_KEY environment variable is not set")
     
     genai.configure(api_key=api_key)
@@ -105,7 +148,11 @@ def get_response(prompt):
             last_error = e
             continue
     
-    # If all models fail, raise the last error
+    # Fallback: try OpenRouter if Gemini all failed
+    text = _get_response_openrouter(prompt)
+    if text:
+        return text
+    
     raise Exception(f"All Gemini models failed. Last error: {last_error}")
 
 
@@ -372,32 +419,42 @@ def test_financial_advice():
 
 @app.route('/test_api_key', methods=["GET"])
 def test_api_key():
-    """Debug route to test API key and basic connectivity"""
-    try:
-        api_key = os.getenv('GEMINI_API_KEY')
-        if not api_key:
-            return "❌ GEMINI_API_KEY environment variable is not set"
-        
+    """Debug route to test API keys (Gemini and OpenRouter)"""
+    lines = ["<h2>API Key Test Results</h2>"]
+    gemini_ok = False
+    openrouter_ok = False
+
+    # Gemini
+    api_key = os.getenv('GEMINI_API_KEY', '').strip()
+    if api_key:
         if len(api_key) < 10:
-            return f"❌ API key seems too short: {api_key[:5]}..."
-        
-        # Test basic API connectivity
-        genai.configure(api_key=api_key)
-        
-        # Try to list models
-        models = genai.list_models()
-        model_count = len(list(models))
-        
-        return f"""
-        <h2>API Key Test Results</h2>
-        <p>✅ API Key is set (length: {len(api_key)})</p>
-        <p>✅ API Key starts with: {api_key[:10]}...</p>
-        <p>✅ Successfully connected to Gemini API</p>
-        <p>✅ Found {model_count} available models</p>
-        <p><strong>Status: API Key is working correctly!</strong></p>
-        """
-    except Exception as e:
-        return f"❌ API Key test failed: {e}"
+            lines.append(f"<p>⚠️ GEMINI_API_KEY is set but very short</p>")
+        else:
+            try:
+                genai.configure(api_key=api_key)
+                models = genai.list_models()
+                model_count = len(list(models))
+                lines.append(f"<p>✅ GEMINI_API_KEY is set (length {len(api_key)})</p>")
+                lines.append(f"<p>✅ Gemini API connected – {model_count} models</p>")
+                gemini_ok = True
+            except Exception as e:
+                lines.append(f"<p>❌ Gemini API failed: {e}</p>")
+    else:
+        lines.append("<p>❌ GEMINI_API_KEY is not set</p>")
+
+    # OpenRouter
+    or_key = os.getenv('OPENROUTER_API_KEY', '').strip()
+    if or_key:
+        lines.append(f"<p>✅ OPENROUTER_API_KEY is set (length {len(or_key)}) – used as fallback</p>")
+        openrouter_ok = True
+    else:
+        lines.append("<p>⚠️ OPENROUTER_API_KEY is not set (optional fallback)</p>")
+
+    if gemini_ok or openrouter_ok:
+        lines.append("<p><strong>Status: At least one API is available. App should work.</strong></p>")
+    else:
+        lines.append("<p><strong>Status: Set GEMINI_API_KEY and/or OPENROUTER_API_KEY.</strong></p>")
+    return "\n".join(lines)
 
 
 @app.route('/form_financial_advice', methods=["GET", "POST"])
