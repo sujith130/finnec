@@ -4,6 +4,8 @@
 
 Visit the deployed app on Render: https://finnec-app.onrender.com
 
+**Deploy on Render:** See **[RENDER_SETUP.md](RENDER_SETUP.md)** for step-by-step env setup (`GEMINI_API_KEY`, `SECRET_KEY`) so the app runs correctly.
+
 Finnec is an AI-driven financial advisory application that provides personalized guidance for small and medium-sized enterprises (SMEs). It combines a predictive ML model with Google’s Gemini models for conversational insights.
 
 ## Features

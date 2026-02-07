@@ -1,0 +1,18 @@
+# Render Blueprint – Finnec app
+# After connecting this repo, add GEMINI_API_KEY and SECRET_KEY in Dashboard → Environment.
+
+services:
+  - type: web
+    name: finnec-app
+    runtime: python
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+
+    # Add these in Render Dashboard → Your Service → Environment (do not put secrets in this file)
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
