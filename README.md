@@ -10,7 +10,10 @@ Finnec is an AI-driven financial advisory application that provides personalized
 
 ## Published Paper
 
-- IJIRT Publication: [`papers/IJIRT195773_PAPER.pdf`](papers/IJIRT195773_PAPER.pdf)
+- **Title:** *AI Driven Financial Planning for Small and Medium Enterprises*
+- **Authors:** Dr. M. Kishore Kumar, Bombay Kundanika, Sreepada Shiva Jyothi, Sai Sujith Chitturi, T. Manivenkat
+- **Venue:** International Journal of Innovative Research in Technology (IJIRT), Volume 12 Issue 11 (April 2026)
+- **PDF:** [`papers/IJIRT195773_PAPER.pdf`](papers/IJIRT195773_PAPER.pdf)
 
 ## Features
 
