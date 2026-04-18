@@ -2,7 +2,7 @@
 
 ## Live Demo
 
-Visit the deployed app on Render: https://finnec-app.onrender.com
+Visit the deployed app on Render: https: //finnec-app.onrender.com
 
 **Deploy on Render:** See **[RENDER_SETUP.md](RENDER_SETUP.md)** for step-by-step env setup (`GEMINI_API_KEY`, `SECRET_KEY`) so the app runs correctly.
 
@@ -72,7 +72,7 @@ python app.py
 
 Then open: `http://127.0.0.1:5000`
 
-If you see “connection refused”, ensure you’re in the folder that contains `app.py` (e.g. `.../finnec-main/finnec-main`) and that your `GEMINI_API_KEY` is set.
+If you see ""connection refused", ensure you’re in the folder that contains `app.py` (e.g. `.../finnec-main/finnec-main`) and that your `GEMINI_API_KEY` is set.
 
 ## Gemini Models
 
@@ -97,7 +97,7 @@ GET /test_models
 - `GET /test_api_key` – verifies `GEMINI_API_KEY` presence and length
 - `GET /test_models` – lists available Gemini models
 
-## Deployment
+##  Deployment
 
 This repo includes step-by-step deploy docs for Render/Heroku:
 - `FINAL_RENDER_DEPLOYMENT.md`
